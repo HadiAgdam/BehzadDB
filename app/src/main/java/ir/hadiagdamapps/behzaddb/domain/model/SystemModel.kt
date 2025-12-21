@@ -1,4 +1,4 @@
-package ir.hadiagdamapps.behzaddb.domain
+package ir.hadiagdamapps.behzaddb.domain.model
 
 import java.time.LocalDateTime
 
