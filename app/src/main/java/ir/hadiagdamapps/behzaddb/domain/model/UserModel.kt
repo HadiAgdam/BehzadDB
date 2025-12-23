@@ -7,7 +7,7 @@ data class UserModel(
     val username: String,
     val password: String,
     val name: String,
-    val roleId: String,
+    val roleId: Int,
     val registerDate: LocalDateTime
 )
 

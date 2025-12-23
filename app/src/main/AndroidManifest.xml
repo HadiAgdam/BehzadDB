@@ -12,6 +12,16 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.BehzadDb">
         <activity
+            android:name=".ChangePasswordActivity"
+            android:exported="false"
+            android:label="@string/title_activity_change_password"
+            android:theme="@style/Theme.BehzadDb" />
+        <activity
+            android:name=".UserProfileActivity"
+            android:exported="false"
+            android:label="@string/title_activity_user_profile"
+            android:theme="@style/Theme.BehzadDb" />
+        <activity
             android:name=".SystemsActivity"
             android:exported="false"
             android:label="@string/title_activity_systems"

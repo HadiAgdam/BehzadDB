@@ -28,4 +28,13 @@ class UserRepository(private val context: Context) {
         )
     }
 
+    fun updateName(username: String, newName: String) {
+        // TODO
+    }
+
+
+    fun updatePassword(username: String, password: String) {
+        // TODO
+    }
+
 }
