@@ -17,7 +17,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import ir.hadiagdamapps.behzaddb.data.repository.LogsRepository
 import ir.hadiagdamapps.behzaddb.data.repository.UserRepository
+import ir.hadiagdamapps.behzaddb.domain.model.ActionModelEnum
+import ir.hadiagdamapps.behzaddb.domain.model.LogModel
 import ir.hadiagdamapps.behzaddb.ui.BaseActivity
 import ir.hadiagdamapps.behzaddb.ui.component.MenuItemButton
 import ir.hadiagdamapps.behzaddb.ui.component.TextInput
@@ -26,7 +29,9 @@ import ir.hadiagdamapps.behzaddb.ui.theme.ApplicationTheme
 class ChangePasswordActivity : BaseActivity() {
 
     private val repository = UserRepository(this)
-    private lateinit var username: String
+    private val logsRepository = LogsRepository(this)
+    private var userId = -1
+    private var systemId = -1
 
     @Composable
     fun MainContent() {
@@ -44,7 +49,14 @@ class ChangePasswordActivity : BaseActivity() {
                     passwordRepeatText = ""
                 }
                 else {
-                    repository.updatePassword(username, passwordText)
+                    repository.updatePassword(userId, passwordText)
+                    logsRepository.saveLog(LogModel(
+                        logId = -1,
+                        actionId = ActionModelEnum.UPDATE_PASSWORD.actionId,
+                        userId,
+                        systemId,
+                        info = "Password update from ChangePasswordActivity"
+                    ))
                     Toast.makeText(this@ChangePasswordActivity, "Password updated", Toast.LENGTH_SHORT).show()
                     finish()
                 }
@@ -55,7 +67,8 @@ class ChangePasswordActivity : BaseActivity() {
     @Composable
     override fun Main() {
         intent.extras?.apply {
-            username = getString("username")!!
+            userId = getInt("userId")
+            systemId = getInt("systemId")
         }
         MainContent()
     }

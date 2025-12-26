@@ -15,20 +15,21 @@ import ir.hadiagdamapps.behzaddb.ui.theme.ApplicationTheme
 
 class SystemsActivity : BaseActivity() {
 
-    val repository = SystemsRepository()
-
+    val repository = SystemsRepository(this)
+    private var userId = -1
 
     private fun onItemClick(systemId: Int) {
-        Intent(this, LoginActivity::class.java).apply {
+        Intent(this, UserProfileActivity::class.java).apply {
+            putExtra("userId", userId)
             putExtra("systemId", systemId)
-            startActivity(intent)
+            startActivity(this)
         }
     }
 
     @Composable
-    fun Content() {
+    fun Content(systems: List<SystemModel>) {
         val content = remember { mutableStateListOf<SystemModel>() }
-        content.addAll(repository.getAll())
+        content.addAll(systems)
         LazyColumn {
             items(content) {
                 SystemViewModel(it) {
@@ -40,16 +41,15 @@ class SystemsActivity : BaseActivity() {
 
     @Composable
     override fun Main() {
-        // TODO check if user is signed in
-        // TODO if user is signed in, redirect to main
-        Content()
+        userId = intent?.extras?.getInt("userId")!!
+        Content(repository.getByUserId(userId))
     }
 
     @Preview
     @Composable
     private fun SystemScreenPreview() {
         ApplicationTheme {
-            Content()
+            Content(listOf())
         }
     }
 }

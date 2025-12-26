@@ -3,6 +3,7 @@ package ir.hadiagdamapps.behzaddb
 import android.content.Intent
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,6 +20,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -31,9 +33,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.hadiagdamapps.behzaddb.data.repository.ActionsRepository
 import ir.hadiagdamapps.behzaddb.data.repository.LogsRepository
+import ir.hadiagdamapps.behzaddb.data.repository.SystemsRepository
 import ir.hadiagdamapps.behzaddb.data.repository.UserRepository
+import ir.hadiagdamapps.behzaddb.domain.model.ActionModelEnum
 import ir.hadiagdamapps.behzaddb.domain.model.LogModel
 import ir.hadiagdamapps.behzaddb.domain.model.LoginModel
+import ir.hadiagdamapps.behzaddb.domain.model.SystemModel
 import ir.hadiagdamapps.behzaddb.domain.model.UserModel
 import ir.hadiagdamapps.behzaddb.ui.BaseActivity
 import ir.hadiagdamapps.behzaddb.ui.component.MenuItemButton
@@ -48,14 +53,20 @@ class UserProfileActivity : BaseActivity() {
     private val userRepository = UserRepository(this)
     private val logsRepository = LogsRepository(this)
     private val actionsRepository = ActionsRepository(this)
+    private val systemsRepository = SystemsRepository(this)
     private lateinit var user: UserModel
+    private lateinit var system: SystemModel
     private val actionNames = HashMap<Int, String>()
+    private val systemNames = HashMap<Int, String>()
 
     @Composable
-    fun MainContent(name: String, username: String, logs: List<LogModel>) {
+    fun MainContent(name: String, username: String) {
+        val logs = remember { mutableStateListOf<LogModel>() }
         var savedName by remember { mutableStateOf(name) }
         var nameEditable by remember { mutableStateOf(name) }
         var saveButtonEnabled by remember { mutableStateOf(false) }
+
+        logs.addAll(logsRepository.getByUser(user.userId))
 
         Column(
             Modifier
@@ -83,7 +94,16 @@ class UserProfileActivity : BaseActivity() {
                 )
                 Button(
                     {
-                        userRepository.updateName(user.username, nameEditable)
+                        userRepository.updateName(user.userId, nameEditable)
+                        logsRepository.saveLog(
+                            LogModel(
+                                logId = -1,
+                                systemId = system.systemId,
+                                actionId = ActionModelEnum.UPDATE_NAME.actionId,
+                                userId = user.userId,
+                                info = "Name updated from UserProfileActivity",
+                            )
+                        )
                         savedName = nameEditable
                         saveButtonEnabled = false
                         Toast.makeText(this@UserProfileActivity, "saved!", Toast.LENGTH_SHORT)
@@ -99,26 +119,46 @@ class UserProfileActivity : BaseActivity() {
             }
             Spacer(Modifier.height(24.dp))
             MenuItemButton("Change Password", onClick = {
-                startActivity(Intent(this@UserProfileActivity, ChangePasswordActivity::class.java))
+                Intent(this@UserProfileActivity, ChangePasswordActivity::class.java).apply {
+                    this.putExtra("userId", user.userId)
+                    this.putExtra("systemId", system.systemId)
+                    startActivity(this)
+                }
             })
             Spacer(Modifier.height(24.dp))
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text("Logs", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                Button({
+                    logs.clear()
+                    logs.addAll(logsRepository.getByUser(user.userId))
+                }) { Text("Reload") }
             }
             Spacer(Modifier.height(24.dp))
-            LazyColumn(Modifier
-                .fillMaxWidth()
-                .weight(1f)) {
-                items(logs) { log ->
+            LazyColumn(
+                Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            ) {
+                items(logs.asReversed()) { log ->
                     LogViewModel(
                         log.actionId.let { actionId ->
                             if (actionNames.keys.contains(actionId))
                                 actionNames[actionId]!!
                             else
-                                actionsRepository.getActionName(actionId)
+                                actionsRepository.getActionById(actionId).name
                                     .also { name -> actionNames[actionId] = name }
                         },
-                        systemId = log.systemId.toString(),
+                        systemId = log.systemId.let { systemId ->
+                            if (systemNames.keys.contains(systemId))
+                                systemNames[systemId]!!
+                            else
+                                systemsRepository.getBySystemId(systemId).name
+                                    .also { name -> systemNames[systemId] = name }
+                        },
                         username = username,
                         time = log.date
                     )
@@ -131,15 +171,22 @@ class UserProfileActivity : BaseActivity() {
 
     @Composable
     override fun Main() {
-        user = userRepository.getUserByLogin(
-            LoginModel(
-                username = intent.extras?.getString("username")!!,
-                password = intent.extras?.getString("password")!!
+        intent.extras?.apply {
+            user = userRepository.getUserById(getInt("userId"))!!
+            system = systemsRepository.getBySystemId(getInt("systemId"))
+        }
+        logsRepository.saveLog(
+            LogModel(
+                logId = -1,
+                actionId = ActionModelEnum.LOGIN.actionId,
+                userId = user.userId,
+                systemId = system.systemId,
+                date = LocalDateTime.now(),
+                info = "Login saved from UserProfile Activity"
             )
-        )!!
-        val logs = logsRepository.getByUser(user.userId)
+        )
 
-        MainContent(user.name, user.username, logs)
+        MainContent(user.name, user.username)
     }
 
 
@@ -149,17 +196,7 @@ class UserProfileActivity : BaseActivity() {
         ApplicationTheme {
             MainContent(
                 name = "Hadi",
-                username = "Numixgamer",
-                (0..5).map {
-                    LogModel(
-                        it,
-                        0,
-                        0,
-                        0,
-                        LocalDateTime.now(),
-                        "info"
-                    )
-                }
+                username = "Numixgamer"
             )
         }
     }

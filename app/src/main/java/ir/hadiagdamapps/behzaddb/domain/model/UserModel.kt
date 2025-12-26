@@ -7,14 +7,6 @@ data class UserModel(
     val username: String,
     val password: String,
     val name: String,
-    val roleId: Int,
-    val registerDate: LocalDateTime
+    val registerDate: LocalDateTime,
+    val accessList: List<Int> = listOf()
 )
-
-
-//UserId (ID)
-//Username (TEXT, UNIQUE)
-//PasswordHash (TEXT, NOT NULL)
-//Name (TEXT)
-//RoleId (FK)
-//RegisterDate (DATETIME)

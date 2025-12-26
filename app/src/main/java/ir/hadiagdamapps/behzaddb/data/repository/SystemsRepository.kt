@@ -1,20 +1,22 @@
 package ir.hadiagdamapps.behzaddb.data.repository
 
+import android.content.Context
+import ir.hadiagdamapps.behzaddb.data.local.ApplicationDatabaseHelper
 import ir.hadiagdamapps.behzaddb.domain.model.SystemModel
 import java.time.LocalDateTime
 
-class SystemsRepository {
+class SystemsRepository(private val context: Context) {
 
-    fun getAll(): List<SystemModel> {
-        // TODO("Get from DB")
-        return (0 until 10).map { i ->
-            SystemModel(
-                systemId = i,
-                name = "Item ${i + 1}",
-                status = if (i % 2 == 0) "Online" else "Offline",
-                registerDate = LocalDateTime.now()
-            )
-        }
+    private val db = ApplicationDatabaseHelper(context)
+
+    fun getByUserId(userId: Int): List<SystemModel> {
+        val user = db.getUsers().first { it.userId == userId }
+
+        return db.getSystems().filter { user.accessList.contains(it.systemId) }
+    }
+
+    fun getBySystemId(systemId: Int): SystemModel {
+        return db.getSystems().first { it.systemId == systemId}
     }
 
 

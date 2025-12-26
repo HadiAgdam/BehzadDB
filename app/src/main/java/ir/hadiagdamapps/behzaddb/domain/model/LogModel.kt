@@ -7,6 +7,6 @@ data class LogModel(
     val actionId: Int,
     val userId: Int,
     val systemId: Int,
-    val date: LocalDateTime,
+    val date: LocalDateTime = LocalDateTime.now(),
     val info: String
 )

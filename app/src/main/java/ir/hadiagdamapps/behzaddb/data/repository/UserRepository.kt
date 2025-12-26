@@ -1,40 +1,28 @@
 package ir.hadiagdamapps.behzaddb.data.repository
 
 import android.content.Context
+import ir.hadiagdamapps.behzaddb.data.local.ApplicationDatabaseHelper
 import ir.hadiagdamapps.behzaddb.domain.model.LoginModel
 import ir.hadiagdamapps.behzaddb.domain.model.UserModel
-import java.time.LocalDateTime
 
 class UserRepository(private val context: Context) {
 
-
-    fun userExist(login: LoginModel): Boolean {
-        // TODO("fetch from db")
-        // temp
-        return login.username == "test" && login.password == "Test"
-    }
+    private val db = ApplicationDatabaseHelper(context)
 
     fun getUserByLogin(login: LoginModel): UserModel? {
-        // TODO("fetch from db")
-        // temp
-        return UserModel(
-            userId = 0,
-            username = login.username,
-            password=login.password,
-            name = "Test Name",
-            roleId = 0,
-            registerDate = LocalDateTime.now()
-
-        )
+        return db.getUsers().firstOrNull {it.username == login.username && it.password == login.password}
+    }
+    fun getUserById(userId: Int): UserModel? {
+        return db.getUsers().first { it.userId == userId }
     }
 
-    fun updateName(username: String, newName: String) {
-        // TODO
+    fun updateName(userId: Int, newName: String) {
+        db.updateUserName(userId, newName)
     }
 
 
-    fun updatePassword(username: String, password: String) {
-        // TODO
+    fun updatePassword(userId: Int, password: String) {
+        db.updateUserPassword(userId, password)
     }
 
 }

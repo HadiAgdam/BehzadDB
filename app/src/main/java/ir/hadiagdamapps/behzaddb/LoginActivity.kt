@@ -1,6 +1,7 @@
 package ir.hadiagdamapps.behzaddb
 
 import android.content.Intent
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,6 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import ir.hadiagdamapps.behzaddb.data.local.ApplicationDatabaseHelper
+import ir.hadiagdamapps.behzaddb.data.repository.SystemsRepository
 import ir.hadiagdamapps.behzaddb.data.repository.UserRepository
 import ir.hadiagdamapps.behzaddb.domain.model.LoginModel
 import ir.hadiagdamapps.behzaddb.ui.BaseActivity
@@ -31,30 +34,33 @@ import ir.hadiagdamapps.behzaddb.ui.theme.ApplicationColor
 class LoginActivity : BaseActivity() {
 
     private val userRepository = UserRepository(this)
-    private var systemId = 0
+
+    private fun test() {
+        ApplicationDatabaseHelper(this).apply {
+            getUsers().forEach {
+                Log.e(it.username, it.password)
+            }
+        }
+    }
 
     @Composable
     override fun Main() {
-        intent.extras?.getInt("systemId")?.let { systemId = it } ?: {
-            startActivity(Intent(this, SystemsActivity::class.java))
-            finish()
-        }
-
+        test()
         MainContent()
     }
 
     // if success return null else return error
     private fun login(username: String, password: String): String? {
-        return if (userRepository.userExist(LoginModel(username, password))) {
-            startActivity(Intent(this@LoginActivity, MainActivity::class.java).apply {
-                putExtra("username", username)
-                putExtra("password", password)
-                putExtra("systemId", systemId)
-            })
+        val user = userRepository.getUserByLogin(LoginModel(username, password))
+
+        if (user == null) return "user not found"
+
+        Intent(this, SystemsActivity::class.java).apply {
+            putExtra("userId", user.userId)
+            startActivity(this)
             finish()
-            null
-        } else "user not found"
-        // TODO add more conditions like access denied
+        }
+        return null
     }
 
     @Composable
