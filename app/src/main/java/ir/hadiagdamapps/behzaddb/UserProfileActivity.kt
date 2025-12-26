@@ -1,5 +1,6 @@
 package ir.hadiagdamapps.behzaddb
 
+import android.content.Intent
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.Box
@@ -11,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
@@ -26,22 +29,30 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ir.hadiagdamapps.behzaddb.data.repository.ActionsRepository
+import ir.hadiagdamapps.behzaddb.data.repository.LogsRepository
 import ir.hadiagdamapps.behzaddb.data.repository.UserRepository
+import ir.hadiagdamapps.behzaddb.domain.model.LogModel
 import ir.hadiagdamapps.behzaddb.domain.model.LoginModel
 import ir.hadiagdamapps.behzaddb.domain.model.UserModel
 import ir.hadiagdamapps.behzaddb.ui.BaseActivity
 import ir.hadiagdamapps.behzaddb.ui.component.MenuItemButton
 import ir.hadiagdamapps.behzaddb.ui.component.TextInput
+import ir.hadiagdamapps.behzaddb.ui.model.LogViewModel
 import ir.hadiagdamapps.behzaddb.ui.theme.ApplicationColor
 import ir.hadiagdamapps.behzaddb.ui.theme.ApplicationTheme
+import java.time.LocalDateTime
 
 class UserProfileActivity : BaseActivity() {
 
     private val userRepository = UserRepository(this)
+    private val logsRepository = LogsRepository(this)
+    private val actionsRepository = ActionsRepository(this)
     private lateinit var user: UserModel
+    private val actionNames = HashMap<Int, String>()
 
     @Composable
-    fun MainContent(name: String, username: String) {
+    fun MainContent(name: String, username: String, logs: List<LogModel>) {
         var savedName by remember { mutableStateOf(name) }
         var nameEditable by remember { mutableStateOf(name) }
         var saveButtonEnabled by remember { mutableStateOf(false) }
@@ -49,9 +60,8 @@ class UserProfileActivity : BaseActivity() {
         Column(
             Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp)
+                .padding(24.dp)
         ) {
-            Spacer(Modifier.height(24.dp))
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 Text(username, fontWeight = FontWeight.Bold, fontSize = 20.sp)
             }
@@ -66,28 +76,54 @@ class UserProfileActivity : BaseActivity() {
                     }, placeholder = "Name",
                     modifier = Modifier.weight(1f)
                 )
-                Spacer(Modifier
-                    .width(8.dp)
-                    .height(24.dp))
+                Spacer(
+                    Modifier
+                        .width(8.dp)
+                        .height(24.dp)
+                )
                 Button(
                     {
                         userRepository.updateName(user.username, nameEditable)
                         savedName = nameEditable
                         saveButtonEnabled = false
-                        Toast.makeText(this@UserProfileActivity, "saved!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@UserProfileActivity, "saved!", Toast.LENGTH_SHORT)
+                            .show()
                     },
                     shape = RectangleShape,
                     colors = ButtonDefaults.buttonColors(containerColor = ApplicationColor.editButtonColor),
                     modifier = Modifier.height(48.dp),
                     enabled = saveButtonEnabled
                 ) {
-                    Text("Save")
+                    Text("Save Name")
                 }
             }
             Spacer(Modifier.height(24.dp))
             MenuItemButton("Change Password", onClick = {
-
+                startActivity(Intent(this@UserProfileActivity, ChangePasswordActivity::class.java))
             })
+            Spacer(Modifier.height(24.dp))
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Text("Logs", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+            }
+            Spacer(Modifier.height(24.dp))
+            LazyColumn(Modifier
+                .fillMaxWidth()
+                .weight(1f)) {
+                items(logs) { log ->
+                    LogViewModel(
+                        log.actionId.let { actionId ->
+                            if (actionNames.keys.contains(actionId))
+                                actionNames[actionId]!!
+                            else
+                                actionsRepository.getActionName(actionId)
+                                    .also { name -> actionNames[actionId] = name }
+                        },
+                        systemId = log.systemId.toString(),
+                        username = username,
+                        time = log.date
+                    )
+                }
+            }
         }
 
     }
@@ -101,8 +137,9 @@ class UserProfileActivity : BaseActivity() {
                 password = intent.extras?.getString("password")!!
             )
         )!!
+        val logs = logsRepository.getByUser(user.userId)
 
-        MainContent(user.name, user.username)
+        MainContent(user.name, user.username, logs)
     }
 
 
@@ -112,7 +149,17 @@ class UserProfileActivity : BaseActivity() {
         ApplicationTheme {
             MainContent(
                 name = "Hadi",
-                username = "Numixgamer"
+                username = "Numixgamer",
+                (0..5).map {
+                    LogModel(
+                        it,
+                        0,
+                        0,
+                        0,
+                        LocalDateTime.now(),
+                        "info"
+                    )
+                }
             )
         }
     }

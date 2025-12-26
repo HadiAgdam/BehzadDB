@@ -34,9 +34,29 @@ class MainActivity : BaseActivity() {
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
                 IconButton({ finish() }) { Icon(Icons.Default.ExitToApp, null) }
             }
-            Column(Modifier.fillMaxWidth().weight(1f).padding(horizontal = 24.dp), verticalArrangement = Arrangement.Center) {
-                MenuItemButton("Profile", {})
-                MenuItemButton("Work", {})
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.Center
+            ) {
+                MenuItemButton("Profile", {
+                    startActivity(
+                        Intent(
+                            this@MainActivity,
+                            UserProfileActivity::class.java
+                        )
+                    )
+                })
+                MenuItemButton("Work", {
+                    startActivity(
+                        Intent(
+                            this@MainActivity,
+                            UserProfileActivity::class.java
+                        )
+                    )
+                })
 
             }
         }
